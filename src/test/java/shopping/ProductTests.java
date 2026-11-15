@@ -3,6 +3,7 @@ package shopping;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.*;
@@ -13,6 +14,18 @@ public class ProductTests {
     @Test
     void nameExceedsMaxLength() {
         String name = "a".repeat(16);
+        int price = 0;
+        String imageUrl = "https://api.dicebear.com/10.x/waves/svg";
+
+        assertThatThrownBy(() -> Product.of(name, price, imageUrl))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @DisplayName("상품 이름이 null이거나 비어 있거나 공백 뿐이면 예외가 발생한다")
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "   "})
+    void productNameIsBlank(String name) {
         int price = 0;
         String imageUrl = "https://api.dicebear.com/10.x/waves/svg";
 

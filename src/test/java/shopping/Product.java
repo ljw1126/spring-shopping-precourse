@@ -19,6 +19,10 @@ public class Product {
     }
 
     public static Product of(String name, int price, String imageUrl) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("Product name is null or blank");
+        }
+
         if(name.length() > 15) {
             throw new IllegalArgumentException("Product name is too long (limit 15)");
         }
