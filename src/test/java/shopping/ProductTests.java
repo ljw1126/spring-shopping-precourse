@@ -2,6 +2,8 @@ package shopping;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -16,5 +18,27 @@ public class ProductTests {
 
         assertThatThrownBy(() -> Product.of(name, price, imageUrl))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @DisplayName("상품 이름에 허용되지 않은 특수문자가 있으면 예외가 발생한다")
+    @ParameterizedTest
+    @ValueSource(strings = {"상품!", "상품@", "상품#", "상품*", "상품😀"})
+    void nameContainsInvalidSpecialCharacter(String name) {
+        int price = 0;
+        String imageUrl = "https://api.dicebear.com/10.x/waves/svg";
+
+        assertThatThrownBy(() -> Product.of(name, price, imageUrl))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @DisplayName("상품 이름에 허용된 특수문자는 사용할 수 있다")
+    @ParameterizedTest
+    @ValueSource(strings = {"사과(빨강)", "상품 [1]", "A+B", "a-b", "A&B", "A/B", "a_b"})
+    void nameContainsAllowedSpecialCharacter(String name) {
+        int price = 0;
+        String imageUrl = "https://api.dicebear.com/10.x/waves/svg";
+
+        assertThatCode(() -> Product.of(name, price, imageUrl))
+                .doesNotThrowAnyException();
     }
 }
