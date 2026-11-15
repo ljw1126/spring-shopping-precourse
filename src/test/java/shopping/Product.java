@@ -5,12 +5,11 @@ import java.util.regex.Pattern;
 
 public class Product {
     private static final Pattern INVALID_CHAR = Pattern.compile("[^가-힣a-zA-Z0-9 ()\\[\\]+\\-&/_]");
+    private static final int MAX_NAME_LENGTH = 15;
 
     private String name;
     private int price;
     private String imageUrl;
-
-    private Product() {}
 
     private Product(String name, int price, String imageUrl) {
         this.name = name;
@@ -19,19 +18,23 @@ public class Product {
     }
 
     public static Product of(String name, int price, String imageUrl) {
+        validateName(name);
+
+        return new Product(name, price, imageUrl);
+    }
+
+    private static void validateName(String name) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Product name is null or blank");
         }
 
-        if(name.length() > 15) {
-            throw new IllegalArgumentException("Product name is too long (limit 15)");
+        if (name.length() > MAX_NAME_LENGTH) {
+            throw new IllegalArgumentException("Product name is too long (limit " + MAX_NAME_LENGTH+ ")");
         }
 
         Matcher matcher = INVALID_CHAR.matcher(name);
-        if(matcher.find()) {
+        if (matcher.find()) {
             throw new IllegalArgumentException("Product name included invalid characters : " + matcher.group());
         }
-
-        return new Product(name, price, imageUrl);
     }
 }
