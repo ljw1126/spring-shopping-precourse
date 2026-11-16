@@ -68,6 +68,31 @@ public class ProductTests {
                 .doesNotThrowAnyException();
     }
 
+    @DisplayName("상품을 수정하면 이름, 가격, 이미지 URL이 모두 변경된다")
+    @Test
+    void updateChangesAllFields() {
+        Product product = Product.of("치킨", 20000, "https://example.com/a.svg");
+
+        product.update("피자", 25000, "https://example.com/b.svg");
+
+        assertThat(product.getName()).isEqualTo("피자");
+        assertThat(product.getPrice()).isEqualTo(25000);
+        assertThat(product.getImageUrl()).isEqualTo("https://example.com/b.svg");
+    }
+
+    @DisplayName("상품 수정 시 이름이 유효하지 않으면 예외가 발생하고 기존 값은 유지된다")
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {" ", "상품!", "aaaaaaaaaaaaaaaa"})
+    void updateWithInvalidName(String name) {
+        Product product = Product.of("치킨", 20000, "https://example.com/a.svg");
+
+        assertThatThrownBy(() -> product.update(name, 25000, "https://example.com/b.svg"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(product.getName()).isEqualTo("치킨");
+        assertThat(product.getPrice()).isEqualTo(20000);
+    }
+
     @DisplayName("상품 이름에 허용되지 않은 특수문자가 있으면 예외가 발생한다")
     @ParameterizedTest
     @ValueSource(strings = {"상품!", "상품@", "상품#", "상품*", "상품😀"})
