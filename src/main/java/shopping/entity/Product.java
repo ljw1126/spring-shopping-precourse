@@ -5,12 +5,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Entity
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product {
     private static final Pattern INVALID_CHAR = Pattern.compile("[^가-힣a-zA-Z0-9 ()\\[\\]+\\-&/_]");
@@ -33,6 +35,14 @@ public class Product {
         validateName(name);
 
         return new Product(name, price, imageUrl);
+    }
+
+    public void update(String name, int price, String imageUrl) {
+        validateName(name);
+
+        this.name = name;
+        this.price = price;
+        this.imageUrl = imageUrl;
     }
 
     private static void validateName(String name) {
