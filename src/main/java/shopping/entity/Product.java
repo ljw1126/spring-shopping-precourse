@@ -1,12 +1,24 @@
-package shopping;
+package shopping.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product {
     private static final Pattern INVALID_CHAR = Pattern.compile("[^가-힣a-zA-Z0-9 ()\\[\\]+\\-&/_]");
     private static final int MAX_NAME_LENGTH = 15;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String name;
     private int price;
     private String imageUrl;
