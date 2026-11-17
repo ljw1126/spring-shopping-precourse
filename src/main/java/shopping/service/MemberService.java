@@ -1,6 +1,7 @@
 package shopping.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shopping.entity.Member;
@@ -17,13 +18,13 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
-    public Member register(String email, String password) {
+    public AuthToken register(String email, String password) {
         Member member = Member.of(email, password, passwordEncoder);
         if (memberRepository.existsByEmail(member.getEmail())) {
             throw new DuplicateEmailException();
         }
 
-        return memberRepository.save(member);
+        return issueToken(save(member));
     }
 
     @Transactional(readOnly = true)
@@ -35,6 +36,18 @@ public class MemberService {
             throw new InvalidCredentialsException();
         }
 
+        return issueToken(member);
+    }
+
+    private Member save(Member member) {
+        try {
+            return memberRepository.save(member);
+        } catch (DataIntegrityViolationException e) {
+            throw new DuplicateEmailException(e);
+        }
+    }
+
+    private AuthToken issueToken(Member member) {
         return new AuthToken(jwtProvider.createToken(member.getId()), jwtProvider.getExpiresInSeconds());
     }
 }

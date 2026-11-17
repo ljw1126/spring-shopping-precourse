@@ -3,9 +3,11 @@ package shopping.service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 import shopping.entity.Member;
 import shopping.entity.PasswordEncoder;
@@ -42,18 +44,38 @@ class MemberServiceTests {
     @InjectMocks
     private MemberService memberService;
 
-    @DisplayName("회원 가입하면 인코딩된 비밀번호로 회원을 저장한다")
+    @DisplayName("회원 가입하면 인코딩된 비밀번호로 회원을 저장하고 토큰을 발급한다")
     @Test
-    void registerSavesMemberWithEncodedPassword() {
+    void registerSavesMemberAndIssuesToken() {
         given(passwordEncoder.encode(PASSWORD)).willReturn(ENCODED_PASSWORD);
         given(memberRepository.existsByEmail(EMAIL)).willReturn(false);
-        given(memberRepository.save(any(Member.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(memberRepository.save(any(Member.class))).willAnswer(invocation -> {
+            Member member = invocation.getArgument(0);
+            ReflectionTestUtils.setField(member, "id", 1L);
+            return member;
+        });
+        given(jwtProvider.createToken(1L)).willReturn("token");
+        given(jwtProvider.getExpiresInSeconds()).willReturn(3600L);
 
-        Member member = memberService.register(EMAIL, PASSWORD);
+        AuthToken token = memberService.register(EMAIL, PASSWORD);
 
-        assertThat(member.getEmail()).isEqualTo(EMAIL);
-        assertThat(member.getPassword()).isEqualTo(ENCODED_PASSWORD);
-        verify(memberRepository).save(any(Member.class));
+        ArgumentCaptor<Member> captor = ArgumentCaptor.forClass(Member.class);
+        verify(memberRepository).save(captor.capture());
+        assertThat(captor.getValue().getEmail()).isEqualTo(EMAIL);
+        assertThat(captor.getValue().getPassword()).isEqualTo(ENCODED_PASSWORD);
+        assertThat(token.accessToken()).isEqualTo("token");
+        assertThat(token.expiresIn()).isEqualTo(3600L);
+    }
+
+    @DisplayName("저장 시 유니크 제약 조건을 위반하면 DuplicateEmailException이 발생하고 토큰을 발급하지 않는다")
+    @Test
+    void registerWithUniqueConstraintViolation() {
+        given(memberRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(memberRepository.save(any(Member.class))).willThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> memberService.register(EMAIL, PASSWORD))
+                .isInstanceOf(DuplicateEmailException.class);
+        verify(jwtProvider, never()).createToken(any());
     }
 
     @DisplayName("이미 가입된 이메일이면 DuplicateEmailException이 발생하고 저장하지 않는다")

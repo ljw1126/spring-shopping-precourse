@@ -39,7 +39,7 @@ class MemberControllerTests {
     @DisplayName("회원 가입하면 201과 함께 토큰을 응답한다")
     @Test
     void register() throws Exception {
-        given(memberService.login("user@example.com", "password123")).willReturn(new AuthToken("token", 3600L));
+        given(memberService.register("user@example.com", "password123")).willReturn(new AuthToken("token", 3600L));
 
         mockMvc.perform(post("/api/members/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -49,9 +49,7 @@ class MemberControllerTests {
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresIn").value(3600));
 
-        var order = inOrder(memberService);
-        order.verify(memberService).register("user@example.com", "password123");
-        order.verify(memberService).login("user@example.com", "password123");
+        verify(memberService).register("user@example.com", "password123");
         verifyNoMoreInteractions(memberService);
     }
 

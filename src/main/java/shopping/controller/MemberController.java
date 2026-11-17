@@ -22,8 +22,7 @@ public class MemberController {
 
     @PostMapping("/register")
     public ResponseEntity<TokenResponse> register(@RequestBody @Valid MemberRequest request) {
-        memberService.register(request.email(), request.password());
-        AuthToken token = memberService.login(request.email(), request.password());
+        AuthToken token = memberService.register(request.email(), request.password());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(TokenResponse.from(token));
     }
