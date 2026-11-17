@@ -1,0 +1,59 @@
+package shopping.entity;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.util.Locale;
+import java.util.regex.Pattern;
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Member {
+    private static final Pattern VALID_EMAIL = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    private static final int MIN_PASSWORD_LENGTH = 8;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String email;
+    private String password;
+
+    private Member(String email, String password) {
+        this.email = email;
+        this.password = password;
+    }
+
+    public static Member of(String email, String validPassword, PasswordEncoder passwordEncoder) {
+        validateEmail(email);
+        validatePassword(validPassword);
+
+        return new Member(email.toLowerCase(Locale.ROOT), passwordEncoder.encode(validPassword));
+    }
+
+    private static void validateEmail(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+
+        boolean matches = VALID_EMAIL.matcher(value).matches();
+        if (!matches) {
+            throw new IllegalArgumentException("Email is not valid : " + value);
+        }
+    }
+
+    private static void validatePassword(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
+        if (value.length() < MIN_PASSWORD_LENGTH) {
+            throw new IllegalArgumentException("Password must be at least 8 characters");
+        }
+    }
+}
