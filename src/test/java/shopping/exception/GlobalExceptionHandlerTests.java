@@ -60,6 +60,36 @@ class GlobalExceptionHandlerTests {
                 .andExpect(jsonPath("$.detail").value("Product not found. id = 1"));
     }
 
+    @DisplayName("DuplicateEmailException은 409로 응답한다")
+    @Test
+    void duplicateEmail() throws Exception {
+        given(productService.findById(1L)).willThrow(new DuplicateEmailException());
+
+        mockMvc.perform(get("/api/products/1"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Email already exists"));
+    }
+
+    @DisplayName("InvalidCredentialsException은 401로 응답한다")
+    @Test
+    void invalidCredentials() throws Exception {
+        given(productService.findById(1L)).willThrow(new InvalidCredentialsException());
+
+        mockMvc.perform(get("/api/products/1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.detail").value("Invalid email or password"));
+    }
+
+    @DisplayName("InvalidTokenException은 401로 응답하고 내부 메시지를 노출하지 않는다")
+    @Test
+    void invalidToken() throws Exception {
+        given(productService.findById(1L)).willThrow(new InvalidTokenException("signature mismatch"));
+
+        mockMvc.perform(get("/api/products/1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.detail").value("Invalid token"));
+    }
+
     @DisplayName("ProfanityCheckException은 503으로 응답하고 내부 메시지를 노출하지 않는다")
     @Test
     void profanityCheckFailed() throws Exception {

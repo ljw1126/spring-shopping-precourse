@@ -9,6 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import shopping.entity.Member;
 import shopping.entity.PasswordEncoder;
+import shopping.exception.DuplicateEmailException;
 import shopping.exception.InvalidCredentialsException;
 import shopping.repository.MemberRepository;
 
@@ -55,13 +56,13 @@ class MemberServiceTests {
         verify(memberRepository).save(any(Member.class));
     }
 
-    @DisplayName("이미 가입된 이메일이면 예외가 발생하고 저장하지 않는다")
+    @DisplayName("이미 가입된 이메일이면 DuplicateEmailException이 발생하고 저장하지 않는다")
     @Test
     void registerWithDuplicateEmail() {
         given(memberRepository.existsByEmail(EMAIL)).willReturn(true);
 
         assertThatThrownBy(() -> memberService.register(EMAIL, PASSWORD))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(DuplicateEmailException.class);
         verify(memberRepository, never()).save(any());
     }
 
@@ -71,7 +72,7 @@ class MemberServiceTests {
         given(memberRepository.existsByEmail(EMAIL)).willReturn(true);
 
         assertThatThrownBy(() -> memberService.register("USER@EXAMPLE.COM", PASSWORD))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(DuplicateEmailException.class);
         verify(memberRepository, never()).save(any());
     }
 
@@ -82,10 +83,12 @@ class MemberServiceTests {
         given(memberRepository.findByEmail(EMAIL)).willReturn(Optional.of(member));
         given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
         given(jwtProvider.createToken(1L)).willReturn("token");
+        given(jwtProvider.getExpiresInSeconds()).willReturn(3600L);
 
-        String token = memberService.login(EMAIL, PASSWORD);
+        AuthToken token = memberService.login(EMAIL, PASSWORD);
 
-        assertThat(token).isEqualTo("token");
+        assertThat(token.accessToken()).isEqualTo("token");
+        assertThat(token.expiresIn()).isEqualTo(3600L);
     }
 
     @DisplayName("로그인 시 이메일은 대소문자를 구분하지 않는다")
@@ -96,9 +99,9 @@ class MemberServiceTests {
         given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
         given(jwtProvider.createToken(1L)).willReturn("token");
 
-        String token = memberService.login("USER@EXAMPLE.COM", PASSWORD);
+        AuthToken token = memberService.login("USER@EXAMPLE.COM", PASSWORD);
 
-        assertThat(token).isEqualTo("token");
+        assertThat(token.accessToken()).isEqualTo("token");
     }
 
     @DisplayName("가입되지 않은 이메일이면 예외가 발생하고 토큰을 발급하지 않는다")

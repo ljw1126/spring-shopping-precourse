@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shopping.entity.Member;
 import shopping.entity.PasswordEncoder;
+import shopping.exception.DuplicateEmailException;
 import shopping.exception.InvalidCredentialsException;
 import shopping.repository.MemberRepository;
 
@@ -19,14 +20,14 @@ public class MemberService {
     public Member register(String email, String password) {
         Member member = Member.of(email, password, passwordEncoder);
         if (memberRepository.existsByEmail(member.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new DuplicateEmailException();
         }
 
         return memberRepository.save(member);
     }
 
     @Transactional(readOnly = true)
-    public String login(String email, String password) {
+    public AuthToken login(String email, String password) {
         Member member = memberRepository.findByEmail(Member.normalizeEmail(email))
                 .orElseThrow(InvalidCredentialsException::new);
 
@@ -34,6 +35,6 @@ public class MemberService {
             throw new InvalidCredentialsException();
         }
 
-        return jwtProvider.createToken(member.getId());
+        return new AuthToken(jwtProvider.createToken(member.getId()), jwtProvider.getExpiresInSeconds());
     }
 }
