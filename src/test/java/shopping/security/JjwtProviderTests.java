@@ -35,6 +35,12 @@ class JjwtProviderTests {
         assertThat(jwtProvider.getMemberId(token)).isEqualTo(1L);
     }
 
+    @DisplayName("토큰 만료까지 남은 시간을 초 단위로 반환한다")
+    @Test
+    void expiresInSeconds() {
+        assertThat(jwtProvider.getExpiresInSeconds()).isEqualTo(3600L);
+    }
+
     @DisplayName("회원마다 서로 다른 토큰이 발급된다")
     @Test
     void tokensDifferByMember() {

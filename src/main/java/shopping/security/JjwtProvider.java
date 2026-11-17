@@ -37,6 +37,11 @@ public class JjwtProvider implements JwtProvider {
     }
 
     @Override
+    public long getExpiresInSeconds() {
+        return expirationMillis / 1000;
+    }
+
+    @Override
     public Long getMemberId(String token) {
         try {
             String subject = Jwts.parser()
