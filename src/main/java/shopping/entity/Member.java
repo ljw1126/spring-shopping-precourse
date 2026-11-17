@@ -1,9 +1,6 @@
 package shopping.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +18,10 @@ public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(unique = true)
     private String email;
+
     private String password;
 
     private Member(String email, String password) {
@@ -29,11 +29,11 @@ public class Member {
         this.password = password;
     }
 
-    public static Member of(String email, String validPassword, PasswordEncoder passwordEncoder) {
+    public static Member of(String email, String rawPassword, PasswordEncoder passwordEncoder) {
         validateEmail(email);
-        validatePassword(validPassword);
+        validatePassword(rawPassword);
 
-        return new Member(email.toLowerCase(Locale.ROOT), passwordEncoder.encode(validPassword));
+        return new Member(email.toLowerCase(Locale.ROOT), passwordEncoder.encode(rawPassword));
     }
 
     private static void validateEmail(String value) {
