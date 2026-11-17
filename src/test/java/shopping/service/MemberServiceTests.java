@@ -6,12 +6,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import shopping.entity.Member;
 import shopping.entity.PasswordEncoder;
+import shopping.exception.InvalidCredentialsException;
 import shopping.repository.MemberRepository;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -29,6 +34,9 @@ class MemberServiceTests {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private JwtProvider jwtProvider;
 
     @InjectMocks
     private MemberService memberService;
@@ -65,5 +73,76 @@ class MemberServiceTests {
         assertThatThrownBy(() -> memberService.register("USER@EXAMPLE.COM", PASSWORD))
                 .isInstanceOf(IllegalArgumentException.class);
         verify(memberRepository, never()).save(any());
+    }
+
+    @DisplayName("이메일과 비밀번호가 일치하면 회원 id로 발급한 토큰을 반환한다")
+    @Test
+    void loginReturnsToken() {
+        Member member = savedMember(1L);
+        given(memberRepository.findByEmail(EMAIL)).willReturn(Optional.of(member));
+        given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
+        given(jwtProvider.createToken(1L)).willReturn("token");
+
+        String token = memberService.login(EMAIL, PASSWORD);
+
+        assertThat(token).isEqualTo("token");
+    }
+
+    @DisplayName("로그인 시 이메일은 대소문자를 구분하지 않는다")
+    @Test
+    void loginIgnoresEmailCase() {
+        Member member = savedMember(1L);
+        given(memberRepository.findByEmail(EMAIL)).willReturn(Optional.of(member));
+        given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
+        given(jwtProvider.createToken(1L)).willReturn("token");
+
+        String token = memberService.login("USER@EXAMPLE.COM", PASSWORD);
+
+        assertThat(token).isEqualTo("token");
+    }
+
+    @DisplayName("가입되지 않은 이메일이면 예외가 발생하고 토큰을 발급하지 않는다")
+    @Test
+    void loginWithUnknownEmail() {
+        given(memberRepository.findByEmail(EMAIL)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> memberService.login(EMAIL, PASSWORD))
+                .isInstanceOf(InvalidCredentialsException.class);
+        verify(jwtProvider, never()).createToken(any());
+    }
+
+    @DisplayName("비밀번호가 일치하지 않으면 예외가 발생하고 토큰을 발급하지 않는다")
+    @Test
+    void loginWithWrongPassword() {
+        Member member = savedMember(1L);
+        given(memberRepository.findByEmail(EMAIL)).willReturn(Optional.of(member));
+        given(passwordEncoder.matches("wrong-password", ENCODED_PASSWORD)).willReturn(false);
+
+        assertThatThrownBy(() -> memberService.login(EMAIL, "wrong-password"))
+                .isInstanceOf(InvalidCredentialsException.class);
+        verify(jwtProvider, never()).createToken(any());
+    }
+
+    @DisplayName("이메일이 없는 경우와 비밀번호가 틀린 경우의 예외 메시지가 같다")
+    @Test
+    void loginFailureMessagesAreIdentical() {
+        Member member = savedMember(1L);
+        given(memberRepository.findByEmail("none@example.com")).willReturn(Optional.empty());
+        given(memberRepository.findByEmail(EMAIL)).willReturn(Optional.of(member));
+        given(passwordEncoder.matches("wrong-password", ENCODED_PASSWORD)).willReturn(false);
+
+        Throwable unknownEmail = catchThrowable(() -> memberService.login("none@example.com", PASSWORD));
+        Throwable wrongPassword = catchThrowable(() -> memberService.login(EMAIL, "wrong-password"));
+
+        assertThat(unknownEmail).isInstanceOf(InvalidCredentialsException.class);
+        assertThat(wrongPassword).isInstanceOf(InvalidCredentialsException.class);
+        assertThat(unknownEmail).hasMessage(wrongPassword.getMessage());
+    }
+
+    private Member savedMember(Long id) {
+        given(passwordEncoder.encode(PASSWORD)).willReturn(ENCODED_PASSWORD);
+        Member member = Member.of(EMAIL, PASSWORD, passwordEncoder);
+        ReflectionTestUtils.setField(member, "id", id);
+        return member;
     }
 }

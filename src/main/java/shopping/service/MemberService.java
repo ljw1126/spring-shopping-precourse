@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import shopping.entity.Member;
 import shopping.entity.PasswordEncoder;
+import shopping.exception.InvalidCredentialsException;
 import shopping.repository.MemberRepository;
 
 @Service
@@ -13,6 +14,7 @@ import shopping.repository.MemberRepository;
 public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
     public Member register(String email, String password) {
         Member member = Member.of(email, password, passwordEncoder);
@@ -21,5 +23,17 @@ public class MemberService {
         }
 
         return memberRepository.save(member);
+    }
+
+    @Transactional(readOnly = true)
+    public String login(String email, String password) {
+        Member member = memberRepository.findByEmail(Member.normalizeEmail(email))
+                .orElseThrow(InvalidCredentialsException::new);
+
+        if (!passwordEncoder.matches(password, member.getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+
+        return jwtProvider.createToken(member.getId());
     }
 }

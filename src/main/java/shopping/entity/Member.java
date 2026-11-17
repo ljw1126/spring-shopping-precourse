@@ -33,7 +33,11 @@ public class Member {
         validateEmail(email);
         validatePassword(rawPassword);
 
-        return new Member(email.toLowerCase(Locale.ROOT), passwordEncoder.encode(rawPassword));
+        return new Member(normalizeEmail(email), passwordEncoder.encode(rawPassword));
+    }
+
+    public static String normalizeEmail(String email) {
+        return email.toLowerCase(Locale.ROOT);
     }
 
     private static void validateEmail(String value) {
