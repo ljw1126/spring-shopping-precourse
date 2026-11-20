@@ -1,5 +1,6 @@
 package shopping.repository;
 
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ import shopping.entity.PasswordEncoder;
 import shopping.entity.Product;
 import shopping.entity.Wish;
 import shopping.security.BCryptPasswordEncoderAdapter;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -90,6 +93,35 @@ class WishRepositoryTests {
         flushAndClear();
 
         assertThat(wishRepository.findAll()).isEmpty();
+    }
+
+    @DisplayName("회원의 위시를 조회하면 상품도 함께 가져온다")
+    @Test
+    void findAllByMemberIdFetchesProduct() {
+        Member member = saveMember("user@example.com");
+        saveWish(member, saveProduct("치킨"));
+        saveWish(member, saveProduct("피자"));
+        flushAndClear();
+
+        List<Wish> wishes = wishRepository.findAllByMemberId(member.getId());
+
+        assertThat(wishes).hasSize(2);
+        assertThat(wishes).allSatisfy(wish -> assertThat(Hibernate.isInitialized(wish.getProduct())).isTrue());
+    }
+
+    @DisplayName("다른 회원의 위시는 조회하지 않는다")
+    @Test
+    void findAllByMemberIdOnlyReturnsOwnWishes() {
+        Member member = saveMember("user@example.com");
+        Member otherMember = saveMember("other@example.com");
+        Product product = saveProduct("치킨");
+        Wish own = saveWish(member, product);
+        saveWish(otherMember, product);
+        flushAndClear();
+
+        List<Wish> wishes = wishRepository.findAllByMemberId(member.getId());
+
+        assertThat(wishes).extracting(Wish::getId).containsExactly(own.getId());
     }
 
     private Member saveMember(String email) {
