@@ -60,4 +60,21 @@ public class Member {
             throw new IllegalArgumentException("Password must be at least 8 characters");
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Member other)) {
+            return false;
+        }
+
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }
