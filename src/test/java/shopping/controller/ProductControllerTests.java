@@ -11,6 +11,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import shopping.dto.ProductRequest;
 import shopping.entity.Product;
+import shopping.service.JwtProvider;
 import shopping.service.ProductService;
 
 import java.util.List;
@@ -34,6 +35,9 @@ class ProductControllerTests {
 
     @MockitoBean
     private ProductService productService;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @DisplayName("상품을 생성하면 201과 Location, 생성된 상품을 응답한다")
     @Test

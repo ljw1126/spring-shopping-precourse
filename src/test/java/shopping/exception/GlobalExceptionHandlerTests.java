@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import shopping.controller.ProductController;
 import shopping.dto.ProductRequest;
 import shopping.external.ProfanityCheckException;
+import shopping.service.JwtProvider;
 import shopping.service.ProductService;
 
 import java.util.NoSuchElementException;
@@ -37,6 +38,9 @@ class GlobalExceptionHandlerTests {
 
     @MockitoBean
     private ProductService productService;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @DisplayName("IllegalArgumentException은 400으로 응답한다")
     @Test

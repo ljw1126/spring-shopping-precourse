@@ -12,6 +12,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import shopping.dto.MemberRequest;
 import shopping.exception.DuplicateEmailException;
 import shopping.exception.InvalidCredentialsException;
+import shopping.service.JwtProvider;
 import shopping.service.AuthToken;
 import shopping.service.MemberService;
 import tools.jackson.databind.ObjectMapper;
@@ -35,6 +36,9 @@ class MemberControllerTests {
 
     @MockitoBean
     private MemberService memberService;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     @DisplayName("회원 가입하면 201과 함께 토큰을 응답한다")
     @Test

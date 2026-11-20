@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import shopping.dto.ProductRequest;
+import shopping.service.JwtProvider;
 import shopping.service.ProductService;
 import tools.jackson.databind.ObjectMapper;
 
@@ -32,6 +33,9 @@ class ProductRequestValidationTests {
 
     @MockitoBean
     private ProductService productService;
+
+    @MockitoBean
+    private JwtProvider jwtProvider;
 
     static Stream<ProductRequest> invalidRequests() {
         return Stream.of(
