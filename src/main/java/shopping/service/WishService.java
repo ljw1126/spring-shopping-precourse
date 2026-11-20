@@ -25,14 +25,14 @@ public class WishService {
     private final ProductRepository productRepository;
 
     public Wish add(Long memberId, Long productId) {
-        var member = getMember(memberId);
-        var product = getProduct(productId);
+        Member member = getMember(memberId);
+        Product product = getProduct(productId);
 
         if (wishRepository.existsByMemberIdAndProductId(memberId, productId)) {
             throw new DuplicateWishException("Wish already exists");
         }
 
-        var wish = Wish.of(member, product);
+        Wish wish = Wish.of(member, product);
         try {
             return wishRepository.save(wish);
         } catch (DataIntegrityViolationException e) {
@@ -48,8 +48,8 @@ public class WishService {
 
     public void delete(Long memberId, Long wishId) {
         Assert.notNull(memberId, "Member id cannot be null");
-        var member = getMember(memberId);
-        var wish = getWish(wishId);
+        Member member = getMember(memberId);
+        Wish wish = getWish(wishId);
         if (!wish.isOwnedBy(member)) {
             throw wishNotFound(wishId);
         }
