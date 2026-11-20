@@ -70,6 +70,16 @@ class GlobalExceptionHandlerTests {
                 .andExpect(jsonPath("$.detail").value("Email already exists"));
     }
 
+    @DisplayName("DuplicateWishException은 409로 응답한다")
+    @Test
+    void duplicateWish() throws Exception {
+        given(productService.findById(1L)).willThrow(new DuplicateWishException("Wish already exists"));
+
+        mockMvc.perform(get("/api/products/1"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Wish already exists"));
+    }
+
     @DisplayName("InvalidCredentialsException은 401로 응답한다")
     @Test
     void invalidCredentials() throws Exception {
